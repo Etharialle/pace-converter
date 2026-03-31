@@ -1,0 +1,36 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*' # Triggers on tags starting with 'v' (e.g., v1.0.1)
+
+jobs:
+  build:
+    name: Build for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: pace-converter
+            asset_name: pace-converter-linux
+          - os: windows-latest
+            artifact_name: pace-converter.exe
+            asset_name: pace-converter-windows.exe
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build Release
+        run: cargo build --release
+
+      - name: Upload Binary
+        uses: softprops/action-gh-release@v2
+        with:
+          files: target/release/${{ matrix.artifact_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
