@@ -101,38 +101,40 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
         })?;
 
         if let Event::Key(key) = event::read()? {
-            match key.code {
-                KeyCode::Esc => return Ok(()),
-                // Toggle Focus between Distance and Time
-                KeyCode::Tab => {
-                    input_mode = match input_mode {
-                        InputMode::Distance => InputMode::Time,
-                        InputMode::Time => InputMode::Distance,
-                    };
+            if key.kind == event::KeyEventKind::Press {
+                match key.code {
+                    KeyCode::Esc => return Ok(()),
+                    // Toggle Focus between Distance and Time
+                    KeyCode::Tab => {
+                        input_mode = match input_mode {
+                            InputMode::Distance => InputMode::Time,
+                            InputMode::Time => InputMode::Distance,
+                        };
+                    }
+                    // Toggle Units
+                    KeyCode::Char('u') | KeyCode::Char('U') => is_km = !is_km,
+                    // Handle Typing
+                    KeyCode::Char(c) => match input_mode {
+                        InputMode::Distance => {
+                            // Only allow numbers and one decimal point for distance
+                            if c.is_ascii_digit() || (c == '.' && !distance_input.contains('.')) {
+                                distance_input.push(c);
+                            }
+                        }
+                        InputMode::Time => {
+                            if c.is_ascii_digit() && time_digits.len() < 6 {
+                                time_digits.push(c);
+                            }
+                        }
+                    },
+                    KeyCode::Backspace => match input_mode {
+                        InputMode::Distance => { distance_input.pop(); },
+                        InputMode::Time => {
+                            time_digits.pop();
+                        }
+                    },
+                    _ => {}
                 }
-                // Toggle Units
-                KeyCode::Char('u') | KeyCode::Char('U') => is_km = !is_km,
-                // Handle Typing
-                KeyCode::Char(c) => match input_mode {
-                    InputMode::Distance => {
-                        // Only allow numbers and one decimal point for distance
-                        if c.is_ascii_digit() || (c == '.' && !distance_input.contains('.')) {
-                            distance_input.push(c);
-                        }
-                    }
-                    InputMode::Time => {
-                        if c.is_ascii_digit() && time_digits.len() < 6 {
-                            time_digits.push(c);
-                        }
-                    }
-                },
-                KeyCode::Backspace => match input_mode {
-                    InputMode::Distance => { distance_input.pop(); },
-                    InputMode::Time => {
-                        time_digits.pop();
-                    }
-                },
-                _ => {}
             }
         }
     }
